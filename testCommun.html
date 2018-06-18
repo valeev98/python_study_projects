@@ -1,0 +1,474 @@
+<meta charset="utf-8"/>
+<!-- START SIGMA IMPORTS -->
+<script src="lib/src/sigma.core.js"></script>
+<script src="lib/src/conrad.js"></script>
+<script src="lib/src/utils/sigma.utils.js"></script>
+<script src="lib/src/utils/sigma.polyfills.js"></script>
+<script src="lib/src/sigma.settings.js"></script>
+<script src="lib/src/classes/sigma.classes.dispatcher.js"></script>
+<script src="lib/src/classes/sigma.classes.configurable.js"></script>
+<script src="lib/src/classes/sigma.classes.graph.js"></script>
+<script src="lib/src/classes/sigma.classes.camera.js"></script>
+<script src="lib/src/classes/sigma.classes.quad.js"></script>
+<script src="lib/src/classes/sigma.classes.edgequad.js"></script>
+<script src="lib/src/captors/sigma.captors.mouse.js"></script>
+<script src="lib/src/captors/sigma.captors.touch.js"></script>
+<script src="lib/src/renderers/sigma.renderers.canvas.js"></script>
+<script src="lib/src/renderers/sigma.renderers.webgl.js"></script>
+<script src="lib/src/renderers/sigma.renderers.svg.js"></script>
+<script src="lib/src/renderers/sigma.renderers.def.js"></script>
+<script src="lib/src/renderers/webgl/sigma.webgl.nodes.def.js"></script>
+<script src="lib/src/renderers/webgl/sigma.webgl.nodes.fast.js"></script>
+<script src="lib/src/renderers/webgl/sigma.webgl.edges.def.js"></script>
+<script src="lib/src/renderers/webgl/sigma.webgl.edges.fast.js"></script>
+<script src="lib/src/renderers/webgl/sigma.webgl.edges.arrow.js"></script>
+<script src="lib/src/renderers/canvas/sigma.canvas.labels.def.js"></script>
+<script src="lib/src/renderers/canvas/sigma.canvas.hovers.def.js"></script>
+<script src="lib/src/renderers/canvas/sigma.canvas.nodes.def.js"></script>
+<script src="lib/src/renderers/canvas/sigma.canvas.edges.def.js"></script>
+<script src="lib/src/renderers/canvas/sigma.canvas.edges.curve.js"></script>
+<script src="lib/src/renderers/canvas/sigma.canvas.edges.arrow.js"></script>
+<script src="lib/src/renderers/canvas/sigma.canvas.edges.curvedArrow.js"></script>
+<script src="lib/src/renderers/canvas/sigma.canvas.edgehovers.def.js"></script>
+<script src="lib/src/renderers/canvas/sigma.canvas.edgehovers.curve.js"></script>
+<script src="lib/src/renderers/canvas/sigma.canvas.edgehovers.arrow.js"></script>
+<script src="lib/src/renderers/canvas/sigma.canvas.edgehovers.curvedArrow.js"></script>
+<script src="lib/src/renderers/canvas/sigma.canvas.extremities.def.js"></script>
+<script src="lib/src/renderers/svg/sigma.svg.utils.js"></script>
+<script src="lib/src/renderers/svg/sigma.svg.nodes.def.js"></script>
+<script src="lib/src/renderers/svg/sigma.svg.edges.def.js"></script>
+<script src="lib/src/renderers/svg/sigma.svg.edges.curve.js"></script>
+<script src="lib/src/renderers/svg/sigma.svg.labels.def.js"></script>
+<script src="lib/src/renderers/svg/sigma.svg.hovers.def.js"></script>
+<script src="lib/src/middlewares/sigma.middlewares.rescale.js"></script>
+<script src="lib/src/middlewares/sigma.middlewares.copy.js"></script>
+<script src="lib/src/misc/sigma.misc.animation.js"></script>
+<script src="lib/src/misc/sigma.misc.bindEvents.js"></script>
+<script src="lib/src/misc/sigma.misc.bindDOMEvents.js"></script>
+<script src="lib/src/misc/sigma.misc.drawHovers.js"></script>
+<!-- END SIGMA IMPORTS -->
+<script src="lib/plugins/sigma.parsers.gexf/gexf-parser.js"></script>
+<script src="lib/plugins/sigma.parsers.gexf/sigma.parsers.gexf.js"></script>
+<script src="lib/plugins/sigma.layout.forceAtlas2/worker.js"></script>
+<script src="lib/plugins/sigma.layout.forceAtlas2/supervisor.js"></script>
+<script src="lib/plugins/sigma.layout.forceLink/worker.js"></script>
+<script src="lib/plugins/sigma.layout.forceLink/supervisor.js"></script>
+<script src="lib/plugins/sigma.plugins.animate/sigma.plugins.animate.js"></script>
+<script src="lib/jquery-2.1.1.min.js"></script>
+<script src="lib/plugins/sigma.plugins.neighborhoods/sigma.plugins.neighborhoods.js"></script>
+<script src="lib/plugins/sigma.statistics.louvain/sigma.statistics.louvain.js"></script>
+<script src="lib/plugins/sigma.plugins.filter/sigma.plugins.filter.js"></script>
+
+
+<div id="container">
+  <style>
+    #graph-container {
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      position: absolute;
+      background-color: #eee;
+    }
+    .sigma-edge {
+      stroke: #14191C;
+    }
+    .sigma-node {
+      fill: green;
+      stroke: #14191C;
+      stroke-width: 2px;
+    }
+    .sigma-node:hover {
+      fill: blue !important;
+    }
+    .muted {
+      fill-opacity: 0.05;
+      stroke-opacity: 0.05;
+    }
+    #control-pane {
+      top: 5px;
+      /*bottom: 10px;*/
+      right: 5px;
+      position: absolute;
+      width: 230px;
+      background-color: rgb(249, 247, 237);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    #control-pane > div {
+      margin: 10px;
+      overflow-x: auto;
+    }
+    #statistic {
+      top: 5px;
+      /*bottom: 10px;*/
+      left: 5px;
+      position: absolute;
+      width: 210px;
+      background-color: rgb(249, 247, 237);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    #statistic > div {
+      margin: 10px;
+      overflow-x: auto;
+    }
+    h2, h3, h4 {
+      padding: 2px;
+      font-variant: small-caps;
+    }
+  </style>
+
+  <div id="graph-container"></div>
+  <div id="statistic">
+      <h4 id="neighbor_city">Соседство: </h4>
+      <h4 id="centrality">Tests: </h4>
+      <h4 id="density">Плотность графа: </h4>
+      <h4 id="homophily">Гомогенность по полу: </h4>
+  </div>
+  <div id="control-pane" style="display: none">
+    <h2 id="min-degree"></h2>
+    <div id="info">
+        <a id="vkLink" target="_blank" href=""><img id="image" src="" alt="photo profile"></a>
+        <h3 class="underline"><span id="nb-partitions"></span> communities</h3>
+        <div>
+        </div>
+            <span class="line"></span>
+        <div>
+            <button id="run-btn">Определить группы</button>
+            <button id="reset-btn">Отменить группировку</button>
+            <div>
+                <select id="modularity"></select>
+            </div>
+            <button id="select-btn">Выбрать группу</button>
+        </div>
+
+        <p id="attribute"></p>
+        <h3 id="info-degree"></h3>
+        <ul id="listul">
+        </ul>
+    </div>
+  </div>
+</div>
+<script>
+
+var _ = {
+  $: function (id) {
+    return document.getElementById(id);
+  }
+};
+
+var colors = [
+      "#d60d0a",
+      "#93d211",
+      "#d0660f",
+      "#b12dd8",
+      "#5D8556",
+      "#a9ced4",
+      "#CDCF79",
+      "#D8A836",
+      "#5E8084",
+      "#738ECD",
+      "#D36565",
+      "#61DC7B",
+      "#9B7168",
+      "#97C4DE",
+      "#A57E42",
+      "#D5DA41",
+      "#D06B97",
+      "#917097",
+      "#689534",
+      "#90D59B"
+    ];
+
+sigma.classes.graph.addMethod('neighbors', function(nodeId) {
+    var k,
+        neighbors = {},
+        index = this.allNeighborsIndex[nodeId] || {};
+
+    for (k in index)
+      neighbors[k] = this.nodesIndex[k];
+
+    return neighbors;
+  });
+sigma.parsers.gexf('graph_86071988.gexf',{
+//sigma.parsers.gexf('graph_anny.gexf',{
+//sigma.parsers.gexf('graph_file9.gexf',{
+  renderer: {
+    id: 'main',
+    type: 'svg',
+    container: document.getElementById('graph-container'),
+    freeStyle: false
+    },
+
+  settings: {
+            edgeColor: 'default',
+            defaultEdgeColor: "#fff",
+            drawEdges: true,
+            animationsTime: 5000,
+            scalingMode: 'outside',
+            batchEdgesDrawing: true,
+            hideEdgesOnMove: true,
+            sideMargin: 1,
+            enableHovering: false,
+            defaultLabelColor: '#f00',
+            defaultLabelSize: 16,
+            minNodeSize: 0.5,
+            maxNodeSize: 4,
+            minEdgeSize: 0.2,
+            maxEdgeSize: 0.7
+          }
+  },
+  function(s)
+  {
+
+    // Start the ForceLink algorithm:
+    var fa = sigma.layouts.configForceLink(s, {
+      worker: true,
+      barnesHutOptimize: false,
+      autoStop: true,
+      background: true,
+      easing: 'cubicInOut',
+      gravity: 25,
+      scalingRatio: 2
+    });
+    sigma.layouts.startForceLink();
+
+    var count_node = s.graph.nodes().length;
+    var count_edges = s.graph.edges().length;
+    var cit = new Set();
+
+    var count_man = 0, count_woman = 0, woman_edges = 0, dif_edges = 0, man_edges = 0, negh = 0, neig1 = 0;
+    var degrees = [], man_id = [], woman_id = [];
+
+    s.graph.nodes().forEach(function (node) {
+
+        cit.add(s.graph.nodes(node.id).attributes["city_id"]);
+        if(s.graph.nodes(node.id).attributes['gender'] === 1){
+            count_man += 1;
+            man_id.push(node.id);
+        }
+        if(s.graph.nodes(node.id).attributes['gender'] === 2) {
+            count_woman += 1;
+            woman_id.push(node.id);
+        }
+        if(s.graph.nodes(node.id).attributes['city_id'] === 1) {
+            negh += 1;
+        }
+        else {
+            neig1 += 1;
+        }
+    });
+    s.graph.edges().forEach(function (edge) {
+        if (woman_id.indexOf(edge.target) >= 0 && woman_id.indexOf(edge.source) >= 0) {
+            woman_edges += 1;
+        }
+        else if(man_id.indexOf(edge.target) >= 0 && man_id.indexOf(edge.source) >= 0) {
+            man_edges += 1;
+        }
+        else {
+            dif_edges += 1;
+        }
+    });
+
+
+    s.graph.nodes().forEach(function (node) {
+        degrees.push(parseInt(s.graph.degree(node.id)));
+        //node.settings.maxNodeSize = 4 + (6 * (max_degree/s.graph.degree(s.graph.nodes(node.id))));
+        //for( var d in s.graph.nodes()){
+        //    _.$('centrality').textContent = d;
+        //}
+        node.style = ('fill:red');
+    });
+
+    var max_degree = Math.max.apply(null, degrees);
+    s.graph.nodes().forEach(function (node) {
+        //sigma.settings.maxNodeSize = 4 + (6 * (max_degree/s.graph.degree(s.graph.nodes(node.id))));
+        //node.setAttributeNS(null, 'r', 12);
+    });
+    _.$('neighbor_city').textContent += String(negh/count_node).substr(0, 5) + ' Количество городов: ' + cit.size;
+    _.$('homophily').textContent += String((man_edges+woman_edges)/count_edges).substr(0, 5) + '\n' + " ж-ж: " + woman_edges + '; м-м:' + man_edges + '; м-ж: ' + dif_edges;;
+
+    //$('.sigma-node').each(function(node) {
+//
+    //    //_.$('homophily').textContent += node;
+    //    node.setAttributeNS(null, 'r', max_degree);
+    //});
+
+    // Binding silly interactions
+    function mute(node) {
+    if (!~node.getAttribute('class').search(/muted/))
+        node.setAttributeNS(null, 'class', node.getAttribute('class') + ' muted');
+    }
+
+    function unmute(node) {
+    node.setAttributeNS(null, 'class', node.getAttribute('class').replace(/(\s|^)muted(\s|$)/g, '$2'));
+    }
+
+
+    //Statistic
+    //_.$('centrality').textContent = count_node;
+    _.$('density').textContent += String((count_edges*(count_edges -1)/2)/(count_node*(count_node -1)/2)).substr(0,5);
+    //_.$('neighbor_city').textContent += s.graph.nodes(this.getAttribute('data-node-id')).attributes['photo'];
+    //_.$('homophily').textContent =count_node.toString();
+    //_.$('').textContent =;
+
+    $('.sigma-node').on("click", (function() {
+        _.$('centrality').textContent = this['prefix'];
+        _.$("listul").innerHTML = "";
+        _.$('vkLink').href = 'http://vk.com/id' + this.getAttribute('data-node-id');
+
+        // Muting
+        $('.sigma-node').each(function(node) {
+            mute(this);
+        });
+
+
+        $('.sigma-edge').each(function(node) {
+            mute(this);
+        });
+
+        _.$('control-pane').style.display = 'block';
+        if(s.graph.nodes(this.getAttribute('data-node-id')).my_community != null){
+            document.getElementById('nb-partitions').textContent = s.graph.nodes(this.getAttribute('data-node-id')).my_community;
+        }
+        _.$('min-degree').textContent = s.graph.nodes(this.getAttribute('data-node-id')).label;
+        _.$('image').src = s.graph.nodes(this.getAttribute('data-node-id')).attributes['photo'];
+        _.$('info-degree').textContent = 'Общих друзей: ' + s.graph.degree(s.graph.nodes(this.getAttribute('data-node-id')).id);
+
+        //this.style = ('fill:red');
+        //_.$('attribute').textContent = this.color;
+        //_.$('attribute').textContent = this['outerHTML'];
+        //s.refresh();
+
+        //for(var key in attributes_graph){
+        //    _.$('attribute').textContent += ( "Ключ: " + key + " значение: " + attributes_graph[key] );
+        //}
+
+        // Unmuting neighbors
+        var data_degree = [];
+        var neighbors = s.graph.neighborhood($(this).attr('data-node-id'));
+        neighbors.nodes.forEach(function(node) {
+
+            unmute($('[data-node-id="' + node.id + '"]')[0]);
+            data_degree.push(node.label);
+
+        });
+
+        var ul = document.getElementById("listul");
+        for (var i = 1; i < data_degree.length; i++) {
+
+            var textValue = data_degree[i];
+            var li = document.createElement('li');
+            ul.appendChild(li);
+            li.innerHTML = textValue;
+        }
+
+        neighbors.edges.forEach(function(edge) {
+            unmute($('[data-edge-id="' + edge.id + '"]')[0]);
+        });
+
+        //s.graph.nodes().forEach(function (node) {
+        //    _.$('image').textContent = node.name;
+        //});
+    }));
+
+    s.bind('clickStage', function() {
+    $('.sigma-node, .sigma-edge').each(function() {
+        unmute(this);
+        });
+    });
+
+    document.getElementById('select-btn').addEventListener("click", function(e) {
+        var n = document.getElementById('modularity').options.selectedIndex;
+        var group_id = document.getElementById('modularity').options[n].text;
+        // Muting
+        $('.sigma-node').each(function (node) {
+            mute(this);
+
+            //node.settings.labelShow = false;
+        });
+
+        $('.sigma-edge').each(function (node) {
+            mute(this);
+        });
+        var nodes_id = [];
+        if (group_id != 'None modularity') {
+            s.graph.nodes().forEach(function (node) {
+                if (group_id == node.my_community) {
+                    nodes_id.push(node.id.toString());
+                    unmute($('[data-node-id="' + node.id + '"]')[0]);
+                }
+            });
+            //for(var key in nodes_id) {
+            //    _.$('attribute').textContent += ("Ключ: " + key + " значение: " + nodes_id[key]);
+            //}
+            s.graph.edges().forEach(function (edge) {
+
+                if (nodes_id.indexOf(edge.target) >= 0 && nodes_id.indexOf(edge.source) >= 0) {
+                    unmute($('[data-edge-id="' + edge.id + '"]')[0]);
+                }
+
+            });
+        }
+        else {
+            s.graph.nodes().forEach(function (node) {
+                    unmute($('[data-node-id="' + node.id + '"]')[0]);
+            });
+            s.graph.edges().forEach(function (edge) {
+                unmute($('[data-edge-id="' + edge.id + '"]')[0]);
+            });
+        }
+
+    });
+
+    // Detect button
+    document.getElementById('run-btn').addEventListener("click", function(e) {
+      // Detect communities using the Louvain algorithm:
+      var louvainInstance;
+      louvainInstance = sigma.plugins.louvain(s.graph, {
+        setter: function(communityId) { this.my_community = communityId; }
+      });
+      var nbLevels = louvainInstance.countLevels();
+      var partitions = louvainInstance.getPartitions();
+      var nbPartitions = louvainInstance.countPartitions(partitions);
+      // Color nodes based on their community
+      $('.sigma-node').each(function() {
+          if(s.graph.degree(this.getAttribute('data-node-id')) === 0){
+              //s.graph.nodes(this.getAttribute('data-node-id')).my_community = nbPartitions;
+              //nbPartitions = nbPartitions-1;
+          }
+
+          this.style = 'fill:' + colors[s.graph.nodes(this.getAttribute('data-node-id')).my_community];
+      });
+
+
+      s.refresh({skipIndexation: true});
+      //document.getElementById('nb-partitions').textContent = nbPartitions;
+
+      var levelMod = document.getElementById('modularity');
+      levelMod.innerHTML = '';
+
+          for (var i = 0; i < nbPartitions; i++) {
+              var optionMod = document.createElement("option");
+              optionMod.text = i;
+              if (i === nbPartitions - 1) {
+                  optionMod.selected = true;
+              }
+
+              levelMod.add(optionMod);
+
+          }
+});
+    document.getElementById('reset-btn').addEventListener("click", function(e) {
+      // Reset colors
+      $('.sigma-node').each(function() {
+          this.style = '';
+      });
+      s.refresh({skipIndexation: true});
+      document.getElementById('nb-partitions').textContent = 0;
+      document.getElementById('levels').innerHTML = '';
+      louvainInstance = null;
+    });
+
+});
+
+</script>
