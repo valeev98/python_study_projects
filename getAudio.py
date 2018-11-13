@@ -10,7 +10,7 @@ def main():
     start_time = time.time()
     """ Пример составления топа исполнителей для профиля вк """
 
-    login, password = '+79876267637', 'dom4088093'
+    login, password = '88005553535', '********'
     vk_session = vk_api.VkApi(login, password)
 
     try:
